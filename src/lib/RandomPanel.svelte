@@ -1,10 +1,6 @@
 <script>
 import { onMount } from "svelte";
-
-
-  export let title = 'Random'
-  export let description
-  export let listName = title.replace(' ', '_').toLowerCase()
+  export let listName
 
   let rawCandidates = localStorage.getItem(listName)
   let result = null
@@ -66,68 +62,61 @@ import { onMount } from "svelte";
 
 </script>
 
-<div class="container">
-  <h2 class="mt-3 text-center" data-bs-toggle="collapse" href="#random-panel-{listName}">{title}</h2>
-  {#if description }
-    <div class="text-center text-muted">{description}</div>
-  {/if}
+<div class="random-panel mt-2" id="random-panel-{listName}">
+  <div class="text-center mb-3">
+    <a class="btn btn-lg btn-primary px-5 py-2 {randomable ? "" : "disabled"}" on:click={random}>
+      Random !!
+    </a>
+  </div>
 
-  <div class="collapse" id="random-panel-{listName}">
-    <div class="text-center mt-4 mb-3">
-      <a class="btn btn-lg btn-primary px-5 py-2 {randomable ? "" : "disabled"}" on:click={random}>
-        Random !!
-      </a>
-    </div>
-
-    <div class="row">
-      <div class="col"></div>
-      <div class="col-12 col-lg-8">
-        <div class="card border-0 random-result {randoming ? 'randoming' : ''} {result && !randoming ? 'done' : ''}">
-          <div class="card-body">
-            { result || '????' }
-          </div>
+  <div class="row">
+    <div class="col"></div>
+    <div class="col-12 col-lg-8">
+      <div class="card border-0 random-result {randoming ? 'randoming' : ''} {result && !randoming ? 'done' : ''}">
+        <div class="card-body">
+          { result || '????' }
         </div>
       </div>
-      <div class="col"></div>
     </div>
+    <div class="col"></div>
+  </div>
 
-    <div class="mt-3 text-center">
-      <h6><strong>Random Items</strong></h6>
-      {#if candidates.length == 0}
-        <div class="text-muted">No items to random, please click on "Manage Random Items" to add some.</div>
+  <div class="mt-3 text-center">
+    <h6><strong>Random Items</strong></h6>
+    {#if candidates.length == 0}
+      <div class="text-muted">No items to random, please click on "Manage Random Items" to add some.</div>
+    {/if}
+    {#each candidates as candidate, i }
+      {#if wonCandidates.indexOf(candidate) != -1}
+        <del class="mx-2">{candidate} ({wonCandidates.indexOf(candidate) + 1})</del>
+      {:else}
+        <span class="mx-2 {candidate === result ? 'text-info' : ''}">{candidate}</span>
       {/if}
-      {#each candidates as candidate, i }
-        {#if wonCandidates.indexOf(candidate) != -1}
-          <del class="mx-2">{candidate} ({wonCandidates.indexOf(candidate) + 1})</del>
-        {:else}
-          <span class="mx-2 {candidate === result ? 'text-info' : ''}">{candidate}</span>
-        {/if}
-      {/each}
+    {/each}
 
-      <div class="mt-3 mx-auto" style="max-width: 640px">
-        <a class="btn btn-sm btn-danger mb-2" on:click="{manualReset}">Reset</a>
-        <a class="btn btn-sm btn-secondary mb-2" data-bs-toggle="collapse" href="#random-item-{listName}">Manage Random Items</a>
-        <div id="random-item-{listName}" class="collapse">
-          <div class="alert alert-warning">
-            ** Once random items are updated, random result will be reset !
-          </div>
-          <textarea name="random-item-{listName}"
-            class="form-control"
-            bind:value="{rawCandidates}"
-            rows="10"></textarea>
-
-            <div class="row mt-2">
-            <div class="col-12 col-md-8 text-center text-md-start">
-              <small class="text-muted">One items per line</small><br>
-            </div>
-
-            <div class="col-12 col-md-4 text-center text-md-end">
-              <button class="btn btn-sm btn-primary mt-2 mt-md-0" on:click="{updateCandidates}">Apply</button>
-            </div>
-          </div>
-
-
+    <div class="mt-3 mx-auto" style="max-width: 640px">
+      <a class="btn btn-sm btn-danger mb-2" on:click="{manualReset}">Reset</a>
+      <a class="btn btn-sm btn-secondary mb-2" data-bs-toggle="collapse" href="#random-item-{listName}">Manage Random Items</a>
+      <div id="random-item-{listName}" class="collapse">
+        <div class="alert alert-warning">
+          ** Once random items are updated, random result will be reset !
         </div>
+        <textarea name="random-item-{listName}"
+          class="form-control"
+          bind:value="{rawCandidates}"
+          rows="10"></textarea>
+
+          <div class="row mt-2">
+          <div class="col-12 col-md-8 text-center text-md-start">
+            <small class="text-muted">One items per line</small><br>
+          </div>
+
+          <div class="col-12 col-md-4 text-center text-md-end">
+            <button class="btn btn-sm btn-primary mt-2 mt-md-0" on:click="{updateCandidates}">Apply</button>
+          </div>
+        </div>
+
+
       </div>
     </div>
   </div>
@@ -151,10 +140,10 @@ import { onMount } from "svelte";
 
   .random-result.done {
     animation-name: wavy;
-    animation-iteration-count: infinite;
-    animation-duration: 2s;
+    animation-iteration-count: 2;
+    animation-duration: 3s;
     color: #47bfaf;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
   }
 
