@@ -7,7 +7,9 @@ import { onMount } from "svelte";
   let randomInterval = null
   let candidates = parseArrayFromLocalStorage(listName)
   let wonCandidates = parseArrayFromLocalStorage(`{listName}__won`)
-  let candidatesToRandom = []
+  let candidatesToRandom = candidates.filter((candidate) => {
+    return wonCandidates.indexOf(candidate) == -1
+  })
   const spinningSound = new Audio("/randoming.wav")
   const wonSound = new Audio("/won.wav")
 
