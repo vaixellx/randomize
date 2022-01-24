@@ -8,6 +8,8 @@ import { onMount } from "svelte";
   let candidates = parseArrayFromLocalStorage(listName)
   let wonCandidates = parseArrayFromLocalStorage(`{listName}__won`)
   let candidatesToRandom = []
+  const spinningSound = new Audio("/randoming.wav")
+  const wonSound = new Audio("/won.wav")
 
   $: randoming = randomInterval != null
   $: randomable = !randoming && wonCandidates.length != candidates.length
@@ -19,6 +21,7 @@ import { onMount } from "svelte";
   }
 
   function random() {
+    spinningSound.play()
     if (wonCandidates.length == 0) {
       candidatesToRandom = [...candidates]
     }
@@ -27,7 +30,10 @@ import { onMount } from "svelte";
       result = candidatesToRandom[Math.floor(Math.random() * candidatesToRandom.length)]
     }, 200)
 
-    setTimeout(stopRandom, 4000)
+    setTimeout(() => {
+      stopRandom()
+      wonSound.play()
+    }, 3000)
   }
 
   function stopRandom() {
