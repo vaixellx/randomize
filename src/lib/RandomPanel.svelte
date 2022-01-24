@@ -1,4 +1,7 @@
 <script>
+import { onMount } from "svelte";
+
+
   export let title = 'Random'
   export let description
   export let listName = title.replace(' ', '_').toLowerCase()
@@ -6,14 +9,18 @@
   let rawCandidates = localStorage.getItem(listName)
   let result = null
   let randomInterval = null
-  let wonCandidates = []
+  let candidates = parseArrayFromLocalStorage(listName)
+  let wonCandidates = parseArrayFromLocalStorage(`{listName}__won`)
   let candidatesToRandom = []
 
-  $: candidates = rawCandidates?.split("\n")?.filter((candidate) => {
-    return candidate.length > 0
-  }) || []
   $: randoming = randomInterval != null
-  $: randomable = wonCandidates.length != candidates.length
+  $: randomable = !randoming && wonCandidates.length != candidates.length
+
+  function parseArrayFromLocalStorage(storageName) {
+    return localStorage.getItem(storageName)?.split("\n")?.filter((candidate) => {
+      return candidate.length > 0
+    }) || []
+  }
 
   function random() {
     if (wonCandidates.length == 0) {
@@ -31,14 +38,30 @@
     clearInterval(randomInterval)
     randomInterval = null
     wonCandidates = [...wonCandidates, result]
+    localStorage.setItem(`{listName}__won`, wonCandidates.join("\n"))
     candidatesToRandom.splice(candidatesToRandom.indexOf(result), 1)
   }
 
-  function onCandidatesChanged(event) {
-    const value = event.target.value
-    stopRandom()
+  function reset() {
+    result = null
+    localStorage.setItem(`{listName}__won`, '')
     wonCandidates = []
-    localStorage.setItem(listName, value)
+    candidates = parseArrayFromLocalStorage(listName)
+    candidatesToRandom = [...candidates]
+  }
+
+  function manualReset() {
+    if (confirm("Random result will be cleared, are you sure to proceed?")) {
+      reset()
+    }
+  }
+
+  function updateCandidates(event) {
+    if (wonCandidates.length == 0 || confirm("Random result will be cleared, are you sure to proceed?")) {
+      localStorage.setItem(listName, rawCandidates)
+      stopRandom()
+      reset()
+    }
   }
 
 </script>
@@ -58,7 +81,7 @@
 
     <div class="row">
       <div class="col"></div>
-      <div class="col-12 col-lg-6">
+      <div class="col-12 col-lg-8">
         <div class="card border-0 random-result {randoming ? 'randoming' : ''} {result && !randoming ? 'done' : ''}">
           <div class="card-body">
             { result || '????' }
@@ -81,15 +104,29 @@
         {/if}
       {/each}
 
-      <div class="mt-3 mx-auto" style="max-width: 480px">
-        <a class="btn btn-sm btn-link mb-2" data-bs-toggle="collapse" href="#random-item-{listName}">Manage Random Items</a>
+      <div class="mt-3 mx-auto" style="max-width: 640px">
+        <a class="btn btn-sm btn-danger mb-2" on:click="{manualReset}">Reset</a>
+        <a class="btn btn-sm btn-secondary mb-2" data-bs-toggle="collapse" href="#random-item-{listName}">Manage Random Items</a>
         <div id="random-item-{listName}" class="collapse">
+          <div class="alert alert-warning">
+            ** Once random items are updated, random result will be reset !
+          </div>
           <textarea name="random-item-{listName}"
             class="form-control"
             bind:value="{rawCandidates}"
-            on:keyup="{onCandidatesChanged}"
             rows="10"></textarea>
-          <small class="text-muted">One items per line</small>
+
+            <div class="row mt-2">
+            <div class="col-12 col-md-8 text-center text-md-start">
+              <small class="text-muted">One items per line</small><br>
+            </div>
+
+            <div class="col-12 col-md-4 text-center text-md-end">
+              <button class="btn btn-sm btn-primary mt-2 mt-md-0" on:click="{updateCandidates}">Apply</button>
+            </div>
+          </div>
+
+
         </div>
       </div>
     </div>
