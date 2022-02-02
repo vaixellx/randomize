@@ -4,7 +4,9 @@ import { onMount } from "svelte";
 
   let rawCandidates = localStorage.getItem(listName)
   let result = null
+  let currentResult = null
   let randomInterval = null
+  let randoming = false
   let candidates = parseArrayFromLocalStorage(listName)
   let wonCandidates = parseArrayFromLocalStorage(`{listName}__won`)
   let candidatesToRandom = candidates.filter((candidate) => {
@@ -13,7 +15,6 @@ import { onMount } from "svelte";
   const spinningSound = new Audio("/randoming.wav")
   const wonSound = new Audio("/won.wav")
 
-  $: randoming = randomInterval != null
   $: randomable = !randoming && wonCandidates.length != candidates.length
 
   function parseArrayFromLocalStorage(storageName) {
@@ -23,31 +24,69 @@ import { onMount } from "svelte";
   }
 
   function random() {
+    randoming = true
     spinningSound.play()
     if (wonCandidates.length == 0) {
       candidatesToRandom = [...candidates]
     }
 
     randomInterval = setInterval(() => {
-      result = candidatesToRandom[Math.floor(Math.random() * candidatesToRandom.length)]
-    }, 200)
+      currentResult = candidatesToRandom[Math.floor(Math.random() * candidatesToRandom.length)]
+    }, 100)
 
     setTimeout(() => {
       stopRandom()
+      result = currentResult
       wonSound.play()
-    }, 3000)
+      randoming = false
+    }, 3200)
+  }
+
+  function shuffle() {
+    randoming = true
+    spinningSound.play()
+    wonCandidates = []
+    candidatesToRandom = [...candidates]
+    let durationPerCandidate = Math.floor(4000 / candidates.length)
+
+    randomInterval = setInterval(() => {
+      currentResult = candidatesToRandom[Math.floor(Math.random() * candidatesToRandom.length)]
+    }, Math.floor(durationPerCandidate / 5))
+
+    let shuffleInterval = setInterval(() => {
+      stopRandom()
+      randomInterval = setInterval(() => {
+        currentResult = candidatesToRandom[Math.floor(Math.random() * candidatesToRandom.length)]
+      }, Math.floor(durationPerCandidate / 5))
+
+      if (result) {
+        result = `${result} → ${currentResult}`
+      }
+      else {
+        result = currentResult
+      }
+
+      if (candidatesToRandom.length == 0) {
+        clearInterval(shuffleInterval)
+        stopRandom()
+        wonSound.play()
+        randoming = false
+      }
+    }, durationPerCandidate)
+
   }
 
   function stopRandom() {
     clearInterval(randomInterval)
     randomInterval = null
-    wonCandidates = [...wonCandidates, result]
+    wonCandidates = [...wonCandidates, currentResult]
     localStorage.setItem(`{listName}__won`, wonCandidates.join("\n"))
-    candidatesToRandom.splice(candidatesToRandom.indexOf(result), 1)
+    candidatesToRandom.splice(candidatesToRandom.indexOf(currentResult), 1)
   }
 
   function reset() {
     result = null
+    currentResult = null
     localStorage.setItem(`{listName}__won`, '')
     wonCandidates = []
     candidates = parseArrayFromLocalStorage(listName)
@@ -75,6 +114,10 @@ import { onMount } from "svelte";
     <a class="btn btn-lg btn-primary px-5 py-2 {randomable ? "" : "disabled"}" on:click={random}>
       Random !!
     </a>
+
+    <a class="btn btn-lg btn-primary px-5 py-2 {randomable && wonCandidates.length == 0 ? "" : "disabled"}" on:click={shuffle}>
+      Shuffle !!
+    </a>
   </div>
 
   <div class="row">
@@ -98,7 +141,7 @@ import { onMount } from "svelte";
       {#if wonCandidates.indexOf(candidate) != -1}
         <del class="mx-2">{candidate} ({wonCandidates.indexOf(candidate) + 1})</del>
       {:else}
-        <span class="mx-2 {candidate === result ? 'text-info' : ''}">{candidate}</span>
+        <span class="mx-2 {candidate === currentResult ? 'text-info' : ''}">{candidate}</span>
       {/if}
     {/each}
 
@@ -147,11 +190,11 @@ import { onMount } from "svelte";
   }
 
   .random-result.done {
-    animation-name: wavy;
+    animation-name: successFilcker;
     animation-iteration-count: 2;
-    animation-duration: 3s;
+    animation-duration: 1s;
     color: #47bfaf;
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
   }
 
@@ -161,11 +204,19 @@ import { onMount } from "svelte";
   }
 
   @keyframes wavy {
-    0% { font-size: 2.5rem; }
+    0% { font-size: 2rem; }
     25% { font-size: 3rem; }
     50% { font-size: 2rem; }
-    75% { font-size: 4rem; }
-    100% { font-size: 2.5rem; }
+    75% { font-size: 3rem; }
+    100% { font-size: 2rem; }
+  }
+
+  @keyframes successFilcker {
+    0% { color: #47bfafff; }
+    25% { color: #47bfaf55; }
+    50% { color: #47bfafff; }
+    75% { color: #47bfaf55; }
+    100% { color: #47bfafff; }
   }
 
   @keyframes flicker {
